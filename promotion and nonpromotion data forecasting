@@ -1,0 +1,208 @@
+import pandas as pd
+import sqlite3
+import numpy as np
+from sklearn.cluster import KMeans as kMeans
+da=pd.read_csv("assignment4.1a.csv", parse_dates=["Date"])
+dpr=pd.read_csv("PromotionDates.csv", parse_dates=["StartDate", "EndDate"])[0:4]
+
+conn = sqlite3.connect(':memory:')
+da.to_sql('assignment', conn, index=False)
+dpr.to_sql('promotion', conn, index=False)
+query = '''
+  select * from assignment
+  except
+	select ass.*
+        from assignment ass 
+        join promotion pro on ass.Date between pro.StartDate and pro.EndDate
+'''
+df = pd.read_sql_query(query, conn, parse_dates=["Date"])
+cnt_week = max(df['Date'].dt.week) - 4
+df_sum = df.groupby(["StoreCode", "ProductCode"], as_index=False).sum()
+df_sum["Average"] = df_sum["SalesQuantity"]/cnt_week
+df_sum = df_sum[df_sum["StoreCode"] != 152]
+df_sum = df_sum[df_sum["StoreCode"] != 169]
+from sklearn.cluster import KMeans as kMeans
+da=pd.read_csv("assignment4.1a.csv")
+da.describe(decimal=2)
+pd.set_option('display.max_columns',None)
+pd.set_option('display.max_rows',None)
+def basic_info(da):
+  print("This dataset has ", da.shape[1], " columns and ", da.shape[0], " rows.")
+  print("This dataset has ", da[da.duplicated()].shape[0], " duplicated rows.")
+  print(" ")
+cols = df_sum.columns[0:4]
+mapping = {0: 'Slow items', 1: 'Medium items', 2: 'Fast items'}
+def cluster(X):
+	k_means = kMeans(n_clusters=3).fit(X)
+	return X.groupby(k_means.labels_)\
+                .transform('mean').sum(1)\
+                .rank(method='dense').sub(1)\
+                .astype(int).to_frame()
+df_sum_org = df_sum.copy()
+df_sum_store = df_sum_org.copy()
+df_sum["ClusterId"] = df_sum.groupby("StoreCode")[cols].apply(cluster)
+df_sum["ItemType"] = df_sum["ClusterId"].map(mapping)
+df_sum = df_sum.sort_values(["StoreCode","Average"], ascending=[True,False])
+cols = df_sum_store.columns[0:4]
+mapping = {0: 'Slow items', 1: 'Medium items', 2: 'Fast items'}
+
+def cluster(X):
+	k_means = kMeans(n_clusters=3).fit(X)
+	return X.groupby(k_means.labels_)\
+                .transform('mean').sum(4)\
+                .rank(method='dense').sub(4)\
+                .astype(int).to_frame()
+                
+df_sum_store[df_sum_store.ProductCode == 49].index
+for i in range(341):
+  if len(df_sum_store[df_sum_store.ProductCode == i]) == 1:
+    print(i)
+len(df_sum_store[df_sum_store.ProductCode == 49])
+for i in range(341):
+  if len(df_sum_store[df_sum_store.ProductCode == i]) == 2:
+    a = df_sum_store[df_sum_store.ProductCode == i].index
+    df_sum_store.drop(a, inplace=True, axis=0)
+df_sum_store["ClusterId"] = df_sum_store.groupby("ProductCode")[cols].apply(cluster)
+df_sum_store["StoreType"] = df_sum_store["ClusterId"].map(mapping)
+df_sum_store = df_sum_store.sort_values(["ProductCode","Average"], ascending=[True,False])
+df_sum_store
+
+import pandas as pd
+import sqlite3
+import numpy as np
+from sklearn.cluster import KMeans as kMeans
+da=pd.read_csv("assignment4.1a.csv", parse_dates=["Date"])
+dpr=pd.read_csv("PromotionDates.csv", parse_dates=["StartDate", "EndDate"])[0:4]
+
+conn = sqlite3.connect(':memory:')
+da.to_sql('assignment', conn, index=False)
+dpr.to_sql('promotion', conn, index=False)
+#create query for getting sales within promotion dates
+query_promotion = '''
+	select ass.*
+        from assignment ass 
+        join promotion pro on ass.Date between pro.StartDate and pro.EndDate
+'''
+df = pd.read_sql_query(query_promotion, conn, parse_dates=["Date"])
+cnt_week = 4 #max(df['Date'].dt.week)
+df_sum = df.groupby(["StoreCode", "ProductCode"], as_index=False).sum()
+df_sum["Average"] = df_sum["SalesQuantity"]/cnt_week
+#df_sum = df_sum[df_sum["StoreCode"] != 152]
+#df_sum = df_sum[df_sum["StoreCode"] != 169]
+cnt_week
+cols = df_sum.columns[0:4]
+mapping = {0: 'Slow items', 1: 'Medium items', 2: 'Fast items'}
+
+def cluster(X):
+	k_means = kMeans(n_clusters=3).fit(X)
+	return X.groupby(k_means.labels_)\
+                .transform('mean').sum(4)\
+                .rank(method='dense').sub(4)\
+                .astype(int).to_frame()
+  
+from os import X_OK
+cols = df_sum.columns[0:4]
+item_mapping = {0: 'Slow items', 1: 'Medium items', 2: 'Fast items'}
+store_mapping = {0: 'Slow store', 1: 'Medium store', 2: 'Fast store'}
+
+def cluster(X):
+	k_means = kMeans(n_clusters=3).fit(X)
+	return X.groupby(k_means.labels_)\
+                .transform('mean').sum(1)\
+                .rank(method='dense').sub(1)\
+                .astype(int).to_frame()
+
+df_sum["ItemClusterId"] = df_sum.groupby("StoreCode")[cols].apply(cluster)
+df_sum["ItemType"] = df_sum["ItemClusterId"].map(item_mapping)
+#df_sum = df_sum.sort_values(["StoreCode","Average"], ascending=[True,False])
+
+df_sum["StoreClusterId"] = df_sum.groupby("ProductCode")[cols].apply(cluster)
+df_sum["StoreType"] = df_sum["StoreClusterId"].map(store_mapping)
+df_sum = df_sum.sort_values(["ProductCode","Average"], ascending=[True,False])
+
+df_sum.groupby("ProductCode").size().sort_values()
+df_sum[df_sum["ProductCode"] == 228]
+query_promotion = '''
+	select ass.*
+        from assignment ass 
+        join promotion pro on ass.Date between pro.StartDate and pro.EndDate
+'''
+
+
+df_promotion = pd.read_sql_query(query_promotion, conn, parse_dates=["Date"])
+
+
+import pandas as pd
+import sqlite3
+import numpy as np
+from sklearn.cluster import KMeans as kMeans
+da=pd.read_csv("assignment4.1a.csv", parse_dates=["Date"])
+dpr=pd.read_csv("PromotionDates.csv", parse_dates=["StartDate", "EndDate"])[0:4]
+
+#get non-promotion sales
+conn = sqlite3.connect(':memory:')
+da.to_sql('assignment', conn, index=False)
+dpr.to_sql('promotion', conn, index=False)
+
+query_non_promotion = '''
+  select * from assignment
+  except
+	select ass.*
+        from assignment ass 
+        join promotion pro on ass.Date between pro.StartDate and pro.EndDate
+'''
+
+df_non_promotion = pd.read_sql_query(query_non_promotion, conn, parse_dates=["Date"])
+
+#get number of weeks
+cnt_week = max(df_non_promotion['Date'].dt.week) - 4
+df_non_promotion_sum = df_non_promotion.groupby(["StoreCode", "ProductCode"], as_index=False).sum()
+
+#find weekly average
+df_non_promotion_sum["Average"] = df_non_promotion_sum["SalesQuantity"]/cnt_week
+
+df_non_promotion_sum = df_non_promotion_sum[df_non_promotion_sum["StoreCode"] != 152] #only 1 product, clustering can not be applied
+df_non_promotion_sum = df_non_promotion_sum[df_non_promotion_sum["StoreCode"] != 169] #only 1 product, clustering can not be applied
+
+cols = df_non_promotion_sum.columns[0:4]
+item_mapping = {0: 'Slow items', 1: 'Medium items', 2: 'Fast items'}
+store_mapping = {0: 'Slow store', 1: 'Medium store', 2: 'Fast store'}
+
+def cluster(X):
+	k_means = kMeans(n_clusters=3).fit(X)
+	return X.groupby(k_means.labels_)\
+                .transform('mean').sum(1)\
+                .rank(method='dense').sub(1)\
+                .astype(int).to_frame()
+
+df_non_promotion_sum["ItemClusterId"] = df_non_promotion_sum.groupby("StoreCode")[cols].apply(cluster)
+df_non_promotion_sum["ItemType"] = df_non_promotion_sum["ItemClusterId"].map(item_mapping)
+#df_non_promotion_sum = df_non_promotion_sum.sort_values(["StoreCode","Average"], ascending=[True,False])
+
+import pandas as pd
+import sqlite3
+#import numpy as np
+
+from sklearn.cluster import KMeans as kMeans
+da=pd.read_csv("assignment4.1a.csv", parse_dates=["Date"])
+dpr=pd.read_csv("PromotionDates.csv", parse_dates=["StartDate", "EndDate"])[0:4]
+
+#get non-promotion sales
+conn = sqlite3.connect(':memory:')
+da.to_sql('assignment', conn, index=False)
+dpr.to_sql('promotion', conn, index=False)
+
+query_non_promotion = '''
+  select * from assignment
+  except
+	select ass.*
+        from assignment ass 
+        join promotion pro on ass.Date between pro.StartDate and pro.EndDate
+'''
+
+df_non_promotion = pd.read_sql_query(query_non_promotion, conn, parse_dates=["Date"])
+cnt_week = max(df_non_promotion['Date'].dt.week) - 4
+df_non_promotion_avg = df_non_promotion.groupby(["StoreCode", "ProductCode"], as_index=False).sum()
+df_non_promotion_avg["Average"] = df_non_promotion_avg["SalesQuantity"]/cnt_week
+
+  
